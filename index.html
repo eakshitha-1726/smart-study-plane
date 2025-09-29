@@ -1,0 +1,654 @@
+%%html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart Study Planner</title>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --accent:#7c9eff;
+      --muted:#9aa6c2;
+      --success:#2dd4bf;
+      --glass: rgba(255,255,255,0.03);
+      --radius:14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color-scheme: dark;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,#071025 0%, #071827 60%);
+      color:#e6eef8;
+      font-size:15px;
+      padding:24px;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      background-color: lightblue; 
+    }
+    header{display:flex;align-items:center;gap:18px;margin-bottom:20px}
+    h1{margin:0;font-size:20px;letter-spacing:0.2px}
+    .sub{color:var(--muted);font-size:13px}
+    .app {
+      display:grid;
+      grid-template-columns: 380px 1fr;
+      gap:20px;
+      align-items:start;
+    }
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow: 0 6px 20px rgba(6,10,20,0.6);
+    }
+    label{display:block;font-size:13px;margin:10px 0 6px;color:var(--muted)}
+    input[type="text"], input[type="datetime-local"], select, textarea, input[type="number"]{
+      width:100%; padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);
+      background:transparent;color:inherit;outline:none;
+    }
+    textarea{min-height:80px;resize:vertical}
+    .row{display:flex;gap:10px}
+    .small{flex:1}
+    button{
+      background:var(--accent); border:0;padding:10px 14px;border-radius:10px;color:#051034;font-weight:600;
+      cursor:pointer; font-size:14px;
+    }
+    .ghost{background:transparent;border:1px solid rgba(255,255,255,0.06); color:var(--muted)}
+    .danger{background:#ff6b6b;color:white}
+    .main-grid{display:grid;grid-template-rows:auto auto 1fr;gap:14px}
+    .stats{display:flex;gap:12px;align-items:center}
+    .stat{
+      background:var(--card);
+      padding:12px;border-radius:12px;min-width:120px;
+    }
+    .progressbar{
+      height:10px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;margin-top:8px;
+    }
+    .progressbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--success), var(--accent));width:0%}
+    .task-list{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+    .task {
+      background: var(--glass);
+      padding: 14px; 
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 15px; 
+      align-items: center;
+      margin-bottom: 10px; 
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
+      transition: background 0.2s ease-in-out; 
+    }
+    .task:last-child {
+      border-bottom: none; 
+      margin-bottom: 0; 
+    }
+    .task:hover {
+        background: rgba(255, 255, 255, 0.05); 
+    }
+    .left {
+      display: flex;
+      gap: 15px; 
+      align-items: center;
+      flex-grow: 1; 
+    }
+    .dot {
+      width: 14px; 
+      height: 14px; 
+      border-radius: 50%;
+      flex-shrink: 0; 
+    }
+    .info {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1; 
+    }
+    .title {
+      font-weight: 600;
+      font-size: 16px; 
+      color: #e6eef8; 
+      margin-bottom: 4px; 
+    }
+    .meta {
+      color: var(--muted);
+      font-size: 12px; 
+      opacity: 0.8; 
+    }
+    .right {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-shrink: 0; 
+    }
+    .task .ghost, .task .danger {
+        padding: 6px 10px; 
+        font-size: 12px; 
+        border-radius: 8px; 
+    }
+    .task .danger {
+        background: #ff4b4b; 
+    }
+    .timeline-card{background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01)); padding:14px;border-radius:12px}
+    .timeline {
+      margin-top: 10px;
+      height: 150px; 
+      background: linear-gradient(90deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+      border-radius: 8px;
+      position: relative;
+      padding: 12px;
+      overflow-x: auto;
+      overflow-y: hidden; 
+      white-space: nowrap; 
+      display: flex; 
+      align-items: center; 
+    }
+    .axis {
+      height: 2px;
+      background: rgba(255,255,255,0.04);
+      position: absolute; 
+      left: 12px;
+      right: 12px;
+      top: 50%; 
+      transform: translateY(-50%); 
+      z-index: 1; 
+    }
+    .timeline-item {
+      position: absolute; 
+      top: 50%; 
+      transform: translateY(-50%); 
+      min-width: 180px; 
+      text-align: center;
+      background: rgba(255,255,255,0.05); 
+      padding: 10px; 
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.05); 
+      z-index: 2; 
+      transition: transform 0.2s ease-in-out; 
+      margin-right: 10px; 
+    }
+    .timeline-item:hover {
+        transform: translateY(-50%) scale(1.05); 
+        background: rgba(255,255,255,0.08); 
+    }
+    .timeline-item h4 {
+      font-weight: 700;
+      margin: 0 0 4px 0; 
+      font-size: 15px; 
+    }
+    .timeline-item .when {
+      font-size: 11px; 
+      color: var(--muted);
+      margin: 0 0 4px 0; 
+    }
+    .timeline-item .meta {
+        margin-top: 6px;
+        margin-bottom: 0;
+        font-size: 12px; 
+        font-weight: 600; 
+    }
+    .timeline-item.priority-high .meta { color: #ff8674; } 
+    .timeline-item.priority-medium .meta { color: #ffd36b; } 
+    .timeline-item.priority-low .meta { color: #9ad6ff; } 
+    .timeline-item.status-done .meta { color: var(--success); } 
+    .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .filters select{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted)}
+    @media (max-width:980px){
+      .app{grid-template-columns:1fr; }
+      .card{order:2}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Smart Study Planner</h1>
+      <p class="sub">Organize study goals • reminders • timeline • local save</p>
+    </div>
+  </header>
+  <main class="app">
+    <section class="card">
+      <h3 style="margin:0 0 8px">Add / Edit Task</h3>
+      <form id="form-wrap">
+        <input type="hidden" id="task-id" />
+        <label for="title">Title</label>
+        <input id="title" type="text" placeholder="Ex: Math — Integration practice" />
+        <div class="row">
+          <div class="small">
+            <label for="subject">Subject</label>
+            <input id="subject" type="text" placeholder="Subject or course" />
+          </div>
+          <div style="width:120px">
+            <label for="priority">Priority</label>
+            <select id="priority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+        <label for="due">Due date & time</label>
+        <input id="due" type="datetime-local" />
+        <div class="row">
+          <div class="small">
+            <label for="duration">Estimated duration (mins)</label>
+            <input id="duration" type="number" min="1" placeholder="60" />
+          </div>
+          <div style="width:120px">
+            <label for="reminder">Reminder (mins before)</label>
+            <select id="reminder">
+              <option value="0">At due</option>
+              <option value="5">5 min</option>
+              <option value="15" selected>15 min</option>
+              <option value="60">1 hour</option>
+              <option value="1440">1 day</option>
+            </select>
+          </div>
+        </div>
+        <label for="notes">Notes (optional)</label>
+        <textarea id="notes" placeholder="Anything to remember..."></textarea>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button id="save-btn">Add Task</button>
+          <button id="clear-btn" class="ghost" type="button">Clear</button>
+        </div>
+      </form>
+      <hr style="border:none;height:12px">
+      <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="sub">Quick actions</div>
+        <div class="controls">
+          <button id="request-notif" class="ghost">Enable Notifications</button>
+          <button id="clear-complete" class="ghost">Clear Completed</button>
+        </div>
+      </div>
+      <p style="margin-top:8px;color:var(--muted);font-size:13px">
+        Tip: Use reminders and keep timeline view open for a visual plan.
+      </p>
+    </section>
+    <section class="main-grid">
+      <header style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;flex-direction:column">
+          <h2 style="font-weight:700; margin:0;">Today's Snapshot</h2>
+          <p class="sub" style="margin:0;">Overview of pending & upcoming tasks</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="filters">
+            <label for="filter-subject" class="sub" style="margin-bottom: 4px;">Subject:</label>
+            <select id="filter-subject">
+              <option value="">All subjects</option>
+            </select>
+          </div>
+          <div class="filters">
+             <label for="filter-priority" class="sub" style="margin-bottom: 4px;">Priority:</label>
+            <select id="filter-priority">
+              <option value="">All priorities</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div class="filters">
+             <label for="filter-status" class="sub" style="margin-bottom: 4px;">Status:</label>
+            <select id="filter-status">
+              <option value="">All</option>
+              <option value="pending">Pending</option>
+              <option value="done">Completed</option>
+            </select>
+          </div>
+          <button id="add-sample" class="ghost">Add sample</button>
+        </div>
+      </header>
+      <div class="stats">
+        <div class="stat">
+          <p style="font-size:13px;color:var(--muted); margin:0;">Tasks</p>
+          <div style="font-weight:700;font-size:18px" id="stat-count">0</div>
+          <p class="meta" style="margin:0;">total</p>
+        </div>
+        <div class="stat">
+          <p style="font-size:13px;color:var(--muted); margin:0;">Completed</p>
+          <div style="font-weight:700;font-size:18px" id="stat-done">0</div>
+          <p class="meta" style="margin:0;">done</p>
+        </div>
+        <div style="flex:1">
+          <p style="font-size:13px;color:var(--muted); margin:0;">Progress</p>
+          <div class="progressbar"><i id="progress-fill"></i></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 420px;gap:14px">
+        <section class="card">
+          <header style="display:flex;justify-content:space-between;align-items:center">
+            <h3 style="font-weight:700; margin:0;">Task List</h3>
+            <p class="sub" id="next-up" style="margin:0;">No upcoming tasks</p>
+          </header>
+          <ul class="task-list" id="task-list" style="margin-top:12px; padding:0; list-style: none;"></ul>
+        </section>
+        <section class="timeline-card card">
+          <header style="display:flex;justify-content:space-between;align-items:center">
+            <h3 style="font-weight:700; margin:0;">Timeline</h3>
+            <p class="sub" style="margin:0;">Tasks placed by due date</p>
+          </header>
+          <div class="timeline" id="timeline">
+            <div class="axis"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script>
+    const taskListEl = document.getElementById('task-list');
+    const timelineEl = document.getElementById('timeline');
+    const statCount = document.getElementById('stat-count');
+    const statDone = document.getElementById('stat-done');
+    const progressFill = document.getElementById('progress-fill');
+    const nextUp = document.getElementById('next-up');
+    const filterSubject = document.getElementById('filter-subject');
+    const filterPriority = document.getElementById('filter-priority');
+    const filterStatus = document.getElementById('filter-status');
+    const saveBtn = document.getElementById('save-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const addSampleBtn = document.getElementById('add-sample');
+    const requestNotifBtn = document.getElementById('request-notif');
+    const clearCompleteBtn = document.getElementById('clear-complete');
+    const STORAGE_KEY = 'ssp_tasks_v1'; 
+    let tasks = []; 
+    let scheduledTimeouts = {}; 
+    function uid(){ return 't'+Math.random().toString(36).slice(2,9) }
+    function formatShortDate(dtIso){
+      if(!dtIso) return '-';
+      const d = new Date(dtIso);
+      return d.toLocaleString();
+    }
+    function populateSelect(sel, items){
+      const cur = sel.value; 
+      sel.innerHTML = ''; 
+      items.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v || 'All subjects'; 
+        sel.appendChild(opt);
+      });
+      if(items.includes(cur)) sel.value = cur; 
+    }
+    function saveTasks(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+    function loadTasks(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      tasks = raw ? JSON.parse(raw) : [];
+      tasks.forEach(t => { if(!t.id) t.id = uid(); if(!t.createdAt) t.createdAt = new Date().toISOString() });
+    }
+    function showReminderNotification(task){
+      const title = `Reminder: ${task.title}`;
+      const body = `${task.subject ? task.subject + ' — ' : ''}${formatShortDate(task.due)}`;
+      if(window.Notification && Notification.permission === 'granted'){
+        try{
+          new Notification(title, { body, tag: task.id }); 
+        }catch(e){
+          alert(title + '\n' + body);
+        }
+      } else {
+        alert(title + '\n' + body);
+      }
+    }
+    function scheduleReminderForTask(task){
+      if(scheduledTimeouts[task.id]) { clearTimeout(scheduledTimeouts[task.id]); delete scheduledTimeouts[task.id]; }
+      if(!task.due || task.done) return;
+      const due = new Date(task.due);
+      const before = (parseInt(task.reminderMins) || 0) * 60 * 1000; 
+      const when = due.getTime() - before; 
+      const now = Date.now();
+      const delay = when - now; 
+      if(delay <= 0) return;
+      const MAX_DELAY = 2147483640;
+      if(delay > MAX_DELAY){
+        return;
+      }
+      const tid = setTimeout(()=> {
+        showReminderNotification(task);
+        delete scheduledTimeouts[task.id]; 
+      }, delay);
+      scheduledTimeouts[task.id] = tid; 
+    }
+    function scheduleAllReminders(taskList){
+      Object.values(scheduledTimeouts).forEach(tid => clearTimeout(tid));
+      scheduledTimeouts = {};
+      taskList.forEach(t => scheduleReminderForTask(t));
+    }
+    function requestNotificationPermission(){
+      if(!('Notification' in window)){ alert('Notifications not supported in this browser'); return; }
+      Notification.requestPermission().then(p => {
+        alert('Notification permission: ' + p);
+      });
+    }
+    function renderTaskList(taskList, onTaskAction){
+      taskListEl.innerHTML = ''; 
+      taskList.forEach(task => {
+        const el = document.createElement('li'); el.className='task'; 
+        const left = document.createElement('div'); left.className='left';
+        const dot = document.createElement('div'); dot.className='dot';
+        dot.style.background = task.done ? 'linear-gradient(90deg,var(--success),var(--accent))' : (task.priority==='high' ? '#ff8674' : (task.priority==='medium' ? '#ffd36b' : '#9ad6ff'));
+        dot.title = 'Priority: '+task.priority;
+        const info = document.createElement('div');
+        const title = document.createElement('div'); title.className='title'; title.textContent = task.title;
+        const meta = document.createElement('div'); meta.className='meta';
+        const when = task.due ? formatShortDate(task.due) : 'No due date';
+        meta.textContent = `${task.subject ? task.subject + ' • ' : ''}${when} • ${task.duration ? task.duration+'m' : '-'} `;
+        info.appendChild(title); info.appendChild(meta);
+        left.appendChild(dot); left.appendChild(info);
+        const right = document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
+        const doneBtn = document.createElement('button'); doneBtn.className='ghost'; doneBtn.textContent = task.done ? 'Undone' : 'Done';
+        doneBtn.onclick = ()=> onTaskAction(task.id, 'toggleDone'); 
+        const editBtn = document.createElement('button'); editBtn.className='ghost'; editBtn.textContent='Edit';
+        editBtn.onclick = ()=> onTaskAction(task.id, 'edit'); 
+        const delBtn = document.createElement('button'); delBtn.className='danger'; delBtn.textContent='Delete';
+        delBtn.onclick = ()=> { if(confirm('Delete this task?')) onTaskAction(task.id, 'delete'); }; 
+        right.appendChild(doneBtn); right.appendChild(editBtn); right.appendChild(delBtn);
+        el.appendChild(left); el.appendChild(right);
+        taskListEl.appendChild(el); 
+      });
+    }
+    function renderTimeline(taskList){
+      const items = taskList.filter(t=>t.due).slice(); 
+      timelineEl.querySelectorAll('.timeline-item').forEach(n=>n.remove());
+      if(items.length === 0){
+        timelineEl.querySelector('.axis').style.display = 'none';
+        const hint = document.createElement('p'); hint.style.color='var(--muted)'; hint.style.padding='6px'; hint.textContent='No tasks with due dates to show on timeline.'; 
+        timelineEl.appendChild(hint);
+        return;
+      } else {
+        timelineEl.querySelector('.axis').style.display = 'block';
+        Array.from(timelineEl.children).forEach(ch => {
+          if(!ch.classList.contains('axis')) ch.remove();
+        });
+      }
+      const dates = items.map(t=>new Date(t.due).getTime());
+      const min = Math.min(...dates);
+      const max = Math.max(...dates);
+      const pad = (max - min) * 0.08 || 24*60*60*1000; 
+      const start = min - pad;
+      const end = max + pad;
+      const range = end - start;
+      let currentLeft = 0; 
+      items.forEach(t => {
+        const p = ((new Date(t.due).getTime() - start) / range); 
+        const el = document.createElement('article'); el.className='timeline-item'; 
+        el.style.left = `${currentLeft}px`; 
+        el.innerHTML = `<h4 style="font-weight:700; margin:0;">${t.title}</h4>
+                        <p class="when" style="margin:0;">${t.subject ? t.subject + ' • ' : ''}${new Date(t.due).toLocaleString()}</p>
+                        <p class="meta" style="margin-top:6px; margin-bottom:0;">${t.done ? '✓ Completed' : t.priority.toUpperCase()}</p>`; 
+        timelineEl.appendChild(el); 
+        currentLeft += el.offsetWidth + 10; 
+      });
+       timelineEl.style.width = `${currentLeft}px`; 
+    }
+    function renderStats(taskList){
+      statCount.textContent = taskList.length; 
+      const doneCount = taskList.filter(t=>t.done).length;
+      statDone.textContent = doneCount; 
+      const pct = taskList.length ? Math.round((doneCount/taskList.length)*100) : 0;
+      progressFill.style.width = pct + '%'; 
+      const now = Date.now();
+      const upcoming = taskList.filter(t=>t.due && !t.done && new Date(t.due).getTime() >= now).sort((a,b)=>new Date(a.due)-new Date(b.due))[0];
+      nextUp.textContent = upcoming ? `${upcoming.title} • ${formatShortDate(upcoming.due)}` : 'No upcoming tasks';
+    }
+    function updateSubjectFilter(taskList){
+      const subjects = [...new Set(taskList.map(t=>t.subject).filter(Boolean))].sort();
+      populateSelect(filterSubject, ['', ...subjects]);
+    }
+    function renderApp(taskList){
+      const sortedTasks = taskList.slice().sort((a,b)=>{
+        const ad = a.due ? new Date(a.due).getTime() : Infinity;
+        const bd = b.due ? new Date(b.due).getTime() : Infinity;
+        if(ad !== bd) return ad - bd;
+        const pscore = { high:0, medium:1, low:2 }; 
+        return (pscore[a.priority]||1) - (pscore[b.priority]||1);
+      });
+      const fSub = filterSubject.value;
+      const fPri = filterPriority.value;
+      const fStatus = filterStatus.value;
+      let filteredTasks = sortedTasks;
+      if(fSub) filteredTasks = filteredTasks.filter(t=>t.subject === fSub);
+      if(fPri) filteredTasks = filteredTasks.filter(t=>t.priority === fPri);
+      if(fStatus) {
+        if(fStatus === 'pending') filteredTasks = filteredTasks.filter(t=>!t.done);
+        if(fStatus === 'done') filteredTasks = filteredTasks.filter(t=>t.done);
+      }
+      renderTaskList(filteredTasks, handleTaskAction); 
+      renderTimeline(filteredTasks); 
+      renderStats(taskList); 
+      updateSubjectFilter(taskList); 
+    }
+    function getFormData(){
+      const id = document.getElementById('task-id').value;
+      const title = document.getElementById('title').value.trim();
+      const subject = document.getElementById('subject').value.trim();
+      const priority = document.getElementById('priority').value;
+      const dueVal = document.getElementById('due').value;
+      const due = dueVal ? new Date(dueVal).toISOString() : null; 
+      const duration = document.getElementById('duration').value;
+      const reminderMins = document.getElementById('reminder').value;
+      const notes = document.getElementById('notes').value;
+      return { id, title, subject, priority, due, duration, reminderMins, notes };
+    }
+    function setFormData(task){
+      document.getElementById('task-id').value = task.id || '';
+      document.getElementById('title').value = task.title || '';
+      document.getElementById('subject').value = task.subject || '';
+      document.getElementById('priority').value = task.priority || 'medium';
+      document.getElementById('due').value = task.due ? task.due.slice(0,16) : '';
+      document.getElementById('duration').value = task.duration || '';
+      document.getElementById('reminder').value = task.reminderMins || '15';
+      document.getElementById('notes').value = task.notes || '';
+      saveBtn.textContent = task.id ? 'Save changes' : 'Add Task';
+      if (task.id) {
+         window.scrollTo({top:0,behavior:'smooth'});
+      }
+    }
+    function clearForm(){
+      setFormData({}); 
+    }
+    function handleSaveForm(){
+      const formData = getFormData();
+      if(!formData.title){ alert('Please provide a title'); return; }
+      if(formData.id){
+        const t = tasks.find(x=>x.id===formData.id);
+        if(!t) return; 
+        t.title = formData.title;
+        t.subject = formData.subject;
+        t.priority = formData.priority;
+        t.due = formData.due;
+        t.duration = formData.duration;
+        t.reminderMins = formData.reminderMins;
+        t.notes = formData.notes;
+      } else {
+        const newTask = {
+          id: uid(), ...formData, done:false, createdAt: new Date().toISOString()
+        };
+        tasks.push(newTask); 
+      }
+      saveTasks(); 
+      scheduleAllReminders(tasks); 
+      clearForm(); 
+      renderApp(tasks); 
+    }
+    function handleTaskAction(taskId, actionType){
+      const taskIndex = tasks.findIndex(t => t.id === taskId);
+      if (taskIndex === -1) return; 
+      const task = tasks[taskIndex];
+      switch(actionType){
+        case 'toggleDone':
+          task.done = !task.done; 
+          break;
+        case 'edit':
+          setFormData(task); 
+          break;
+        case 'delete':
+          tasks.splice(taskIndex, 1); 
+          break;
+      }
+      saveTasks(); 
+      scheduleAllReminders(tasks); 
+      renderApp(tasks); 
+    }
+    function handleClearCompleted(){
+      if(confirm('Remove all completed tasks?')) {
+        tasks = tasks.filter(t=>!t.done); 
+        saveTasks(); 
+        scheduleAllReminders(tasks); 
+        renderApp(tasks); 
+      }
+    }
+    function addSampleData(){
+      const now = new Date();
+      const t1 = {
+        id: uid(), title: 'Math — Integration practice', subject:'Math', priority:'high',
+        due: new Date(now.getTime() + 1000*60*60*4).toISOString(), duration:90, reminderMins:15, notes:'Focus on substitution & parts', done:false, createdAt:new Date().toISOString()
+      };
+      const t2 = {
+        id: uid(), title: 'History—Chapter 8 summary', subject:'History', priority:'medium',
+        due: new Date(now.getTime() + 1000*60*60*26).toISOString(), duration:45, reminderMins:60, notes:'Make flashcards', done:false, createdAt:new Date().toISOString()};
+      const t3 = {
+        id: uid(), title: 'Chemistry lab pre-read', subject:'Chemistry', priority:'low',
+        due: new Date(now.getTime() + 1000*60*60*72).toISOString(), duration:30, reminderMins:1440, notes:'Check reagents', done:false, createdAt:new Date().toISOString()
+      };
+      tasks.push(t1,t2,t3);
+      saveTasks(); 
+      scheduleAllReminders(tasks); 
+      renderApp(tasks); 
+    }
+    function init(){
+      loadTasks(); 
+      renderApp(tasks); 
+      scheduleAllReminders(tasks); 
+      saveBtn.onclick = handleSaveForm;
+      clearBtn.onclick = clearForm;
+      addSampleBtn.onclick = addSampleData;
+      requestNotifBtn.onclick = requestNotificationPermission;
+      clearCompleteBtn.onclick = handleClearCompleted;
+      filterSubject.onchange = ()=> renderApp(tasks);
+      filterPriority.onchange = ()=> renderApp(tasks);
+      filterStatus.onchange = ()=> renderApp(tasks);
+      window.addEventListener('visibilitychange', ()=> {
+        if(document.visibilityState === 'visible'){
+          scheduleAllReminders(tasks);
+        }
+      });
+      document.addEventListener('keydown', e=>{
+        if(e.key === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey){
+          e.preventDefault(); 
+          document.getElementById('title').focus(); 
+        }
+      });
+      window.addEventListener('beforeunload', ()=>{ saveTasks(); });
+      window.addEventListener('storage', (e)=>{
+        if(e.key === STORAGE_KEY){
+          loadTasks();
+          renderApp(tasks);
+          scheduleAllReminders(tasks);
+        }
+      });
+    }
+    init();
+  </script>
+</body>
+</html>
